@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong v2</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+/* disable scrolling */
+        html, body {
+            overflow: hidden;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+/* definition game board */
+        #table {
+            border: 1px #888 solid;
+            background-color: lightgreen;
+            /* display: block; */
+            margin: auto;
+        }
+    </style>
+
+</head>
+
+<body onload="start()">
+    <header>
+        <div class="header-container">
+            <h1>SYP-MJ</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="syp-mj.html">SYP-MJ</a></li>
+                    <li><a href="index.html#about">Ueber mich</a></li>
+                    <li><a href="index.html#subjects">UnterrichtsGegenstaende</a></li>
+                    <li><a href="index.html#contact">Kontakt</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+<!-- definition game board and startscore -->
+    <section class="section">
+        <h2>Ping Pong v2</h2>
+        <canvas id="table" width="600" height="400"></canvas>
+        <p id="msg">---</p>
+        <p id="score">Player 1: 0 | Player 2: 0</p>
+        <p>up=w, down=s, cheat=a | up=up, down=down, cheat=left</p>
+        <!-- <p id="lives">---</p> -->
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Tommy. All rights reserved.</p>
+    </footer>
+
+</body>
+
+</html>
+<script>
+// scoresave
+    const game = {
+        // lives: 10,
+        scoreP1: 0,
+        scoreP2: 0,
+        // level: 1,
+    };
+
+// gameboard, rows, columns
+    const env = {
+        rows: 20,
+        columns: 20,
+        c: null, // our canvas
+        ctx: null, // 2d-context
+        // ctx.color: "#ccc",
+    };
+
+// net settings
+    const net = {
+        y: 0,
+        w: 1,
+        color: "black",
+    };
+
+// left paddle
+    const paddleP1 = {
+        w: 10,
+        h: 100,
+        color: "red",
+    };
+
+// right paddle
+    const paddleP2 = {
+        w: 10,
+        h: 100,
+        color: "green",
+    };
+
+// settings ball
+    const ball = { // our object with different properties
+        x: 0,
+        y: 0,
+        w: 10,
+        h: 10,
+        deltaX: 5,
+        deltaY: 4,
+        color: "blue",
+    };
+
+// logic
+    function gameLogic() {
+        ball.x += ball.deltaX;
+        ball.y += ball.deltaY;
+
+// ball meets wall (top/btm)
+        if (ball.y > env.c.height || ball.y < 0) {
+            ball.deltaY = -ball.deltaY;
+        }
+
+// ball out (left/right) (score/service)
+        if (ball.x < 0) {
+            game.scoreP2++;
+            document.getElementById("msg").innerHTML = "Service Player 2";
+            serveBall(2);
+        }
+
+        if (ball.x > env.c.width) {
+            game.scoreP1++;
+            document.getElementById("msg").innerHTML = "Service Player 1";
+            serveBall(1);
+        }
+
+// ball meets P1
+        if (intersect(ball, paddleP1)) {
+            ball.deltaX = Math.abs(ball.deltaX);
+        }
+
+// ball meets P2
+        if (intersect(ball, paddleP2)) {
+            ball.deltaX = -Math.abs(ball.deltaX);
+        }
+
+        updateScore();
+    }
+
+// who serves
+    function serveBall(player) {
+        if (player === 1) {
+            ball.x = paddleP1.x + paddleP1.w;
+            ball.y = paddleP1.y + paddleP1.h / 2;
+        } else if (player === 2) {
+            ball.x = paddleP2.x - ball.w;
+            ball.y = paddleP2.y + paddleP2.h / 2;
+        }
+    }
+
+// update score
+    function updateScore() {
+        document.getElementById("score").innerHTML = `Player 1: ${game.scoreP1} | Player 2: ${game.scoreP2}`;
+    }
+
+    function cyclic() {
+        gameLogic();
+        draw(); // draw everything, no matter how tiny the change to the picture
+    }
+
+    function start() {
+        env.c = document.getElementById("table"); // get canvas element and store reference globally
+        env.c.setAttribute('tabindex', '0');
+        env.c.focus(); // divert keyboard to the canvas
+// canvas.addEventListener('mousedown', f_mousedown, false);
+        env.c.addEventListener("keydown", f_keydown, false); // keydown anstatt keypress (Pfeiltasten)
+        env.ctx = env.c.getContext("2d"); // same thing for the toolbox (context = toolbox)
+        setInterval(cyclic, 50); // do game Logic periodically
+
+// calculate x and y for ball and paddle
+        net.x = env.c.width / 2;
+        net.h = env.c.height;
+
+        paddleP1.y = (env.c.height - paddleP1.h) / 2;
+        paddleP1.x = 0;
+
+        paddleP2.y = (env.c.height - paddleP2.h) / 2;
+        paddleP2.x = env.c.width - paddleP2.w;
+    }
+
+// control for paddle1 (player 1)
+    function f_keydown(e) { // keydown instead of keypress (arrowkeys)
+        if (e.code === "KeyW") paddleP1.y -= 10;
+        if (e.code === "KeyS") paddleP1.y += 10;
+        if (e.code === "KeyA") {
+            paddleP1.h *= 2;
+            setTimeout(() => {
+                paddleP1.h /= 2;
+            }, 1000);
+        }
+
+// control for paddle2 (player 2)
+        if (e.code === "ArrowUp") paddleP2.y -= 10;
+        if (e.code === "ArrowDown") paddleP2.y += 10;
+        if (e.code === "ArrowLeft") {
+            paddleP2.h *= 2;
+            setTimeout(() => {
+                paddleP2.h /= 2;
+            }, 1000);
+        }
+    }
+
+    function draw() {
+// var c = document.getElementById("myCanvas");
+        env.c.width = env.c.width; // clear canvas
+        drawNet();
+        drawGrid();
+        drawPaddle(paddleP1);
+        drawPaddle(paddleP2);
+        drawBall();
+    }
+
+// draw the net
+    function drawNet() {
+        env.ctx.fillStyle = net.color;
+        env.ctx.fillRect(net.x, net.y, net.w, net.h);
+    }
+
+// draw the grid
+    function drawGrid() {
+        env.ctx.strokeStyle = "#ccc";
+        env.ctx.lineWidth = 0.1;
+
+        for (let i = 0; i <= env.rows; i++) {
+            env.ctx.moveTo(0, i * (env.c.height / env.rows));
+            env.ctx.lineTo(env.c.width, i * (env.c.height / env.rows));
+        }
+
+        for (let i = 0; i <= env.columns; i++) {
+            env.ctx.moveTo(i * (env.c.width / env.columns), 0);
+            env.ctx.lineTo(i * (env.c.width / env.columns), env.c.height);
+        }
+
+        env.ctx.stroke();
+    }
+
+// draw the paddles
+    function drawPaddle(paddle) {
+        env.ctx.fillStyle = paddle.color;
+        env.ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+    }
+
+// draw the ball
+    function drawBall() {
+        env.ctx.fillStyle = ball.color;
+        env.ctx.fillRect(ball.x, ball.y, ball.w, ball.h);
+    }
+
+// former version
+/*    function intersect(R1, R2) {
+        if (R1.x + R1.w < R2.x)
+            return false; // R1 entirely left of R2
+        if (R1.y + R1.h < R2.y)
+            return false; // R1 above R2
+        if (R2.x + R2.w < R1.x)
+            return false; // R2 entirely left of R1
+        if (R2.y + R2.h < R1.y)
+            return false; // R2 above R1
+        return true;
+
+    }
+*/
+
+// found better version online
+    function intersect(R1, R2) {
+        return !(
+            R1.x + R1.w < R2.x ||
+            R1.y + R1.h < R2.y ||
+            R2.x + R2.w < R1.x ||
+            R2.y + R2.h < R1.y
+        );
+    
+    }
+</script>

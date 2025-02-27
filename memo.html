@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory v1</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* disable scrolling */
+        html, body {
+            overflow: hidden;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* definition game board */
+        #table {
+            border: 1px #888 solid;
+            background-color: darkgray;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body onload="start()">
+    <header>
+        <div class="header-container">
+            <h1>SYP-MJ</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="syp-mj.html">SYP-MJ</a></li>
+                    <li><a href="index.html#about">Über mich</a></li>
+                    <li><a href="index.html#subjects">Unterrichtsgegenstände</a></li>
+                    <li><a href="index.html#contact">Kontakt</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- definition game board -->
+    <section class="section">
+        <h2>Memory v1</h2>
+        <canvas id="table" width="430" height="430"></canvas>
+        <p id="msg">Match the pairs</p>
+        <p id="tries">Player 1 used Tries: 0</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Tommy. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // game state
+        const game = {
+            triesP1: 0,
+        };
+
+        // game board
+        const env = {
+            rows: 4,
+            columns: 4,
+            c: null, // our canvas
+            ctx: null, // 2d-context
+        };
+
+        // card properties
+        const card = {
+            width: 100,
+            height: 100,
+            padding: 10,
+        };
+
+        // card colors and states
+        const colors = ['red', 'green', 'blue', 'white', 'cyan', 'magenta', 'yellow', 'black'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+
+        // create cards
+        function createCards() {
+            let tempColors = [...colors, ...colors];
+            tempColors = tempColors.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < env.rows; i++) {
+                for (let j = 0; j < env.columns; j++) {
+                    if (tempColors.length > 0) {
+                        const color = tempColors.pop();
+                        cards.push({
+                            x: j * (card.width + card.padding),
+                            y: i * (card.height + card.padding),
+                            color: color,
+                            flipped: false,
+                            matched: false
+                        });
+                    }
+                }
+            }
+        }
+
+        // draw cards
+        function drawCards() {
+            env.ctx.clearRect(0, 0, env.c.width, env.c.height);
+            cards.forEach(cardItem => {
+                env.ctx.fillStyle = cardItem.flipped || cardItem.matched ? cardItem.color : 'gray';
+                env.ctx.fillRect(cardItem.x, cardItem.y, card.width, card.height);
+                env.ctx.strokeRect(cardItem.x, cardItem.y, card.width, card.height);
+            });
+        }
+
+        // check for pair
+        function checkMatch() {
+            if (flippedCards.length === 2) {
+                game.triesP1++;
+                updateTries();
+                const [first, second] = flippedCards;
+                if (first.color === second.color) {
+                    first.matched = true;
+                    second.matched = true;
+                    matchedPairs++;
+                } else {
+                    setTimeout(() => {
+                        first.flipped = false;
+                        second.flipped = false;
+                        drawCards();
+                    }, 1000);
+                }
+                flippedCards = [];
+            }
+        }
+
+        // handle clicks
+        function handleCardClick(e) {
+            const rect = env.c.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            cards.forEach(cardItem => {
+                if (
+                    x > cardItem.x &&
+                    x < cardItem.x + card.width &&
+                    y > cardItem.y &&
+                    y < cardItem.y + card.height &&
+                    !cardItem.flipped &&
+                    !cardItem.matched
+                ) {
+                    cardItem.flipped = true;
+                    flippedCards.push(cardItem);
+                    drawCards();
+                    checkMatch();
+                }
+            });
+
+            if (matchedPairs === colors.length) {
+                setTimeout(() => alert('ALL MATCHED'), 500);
+            }
+        }
+
+        // update tries
+        function updateTries() {
+            document.getElementById("tries").innerHTML = `Player 1: ${game.triesP1}`;
+        }
+
+        // start game
+        function start() {
+            env.c = document.getElementById('table');
+            env.ctx = env.c.getContext('2d');
+            createCards();
+            drawCards();
+            env.c.addEventListener('click', handleCardClick);
+        }
+    </script>
+</body>
+</html>
