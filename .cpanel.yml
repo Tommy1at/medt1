@@ -2,5 +2,3 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/freizeit/bulme.cpc.co.at/
-    - /bin/cp index.html $DEPLOYPATH
-    - /bin/cp style.css $DEPLOYPATH
