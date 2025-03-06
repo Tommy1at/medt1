@@ -12,7 +12,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $data = "Name: $name\nEmail: $email\nMessage: $message\n------------------------\n";
 
     mail("dominik.aspeck@aspeck.net", "KontaktFormular (bulme.cpc.co.at)", $data);
-    mail("sg@bulme.at", "KontaktFormular (bulme.cpc.co.at)", $data);
 
     echo json_encode(["status" => "success", "message" => "Danke fuer deine Nachricht, $name!"]);
     
